@@ -1,0 +1,13 @@
+RMIRegistry:
+  For server-side use:
+    HashMap registry : mapping name to remote object stub and location
+
+  Static: these are for client-side use
+    lookup (String name, String registry_host)
+      find and return remote object stub from registry host
+
+    register (String name, RMIRemote object, String registry_host)
+      register the remote object into the registry at the host
+
+    unregister (String name, String registry_host) 
+      unregister the remote object from the registry at the host
