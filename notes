@@ -11,3 +11,25 @@ RMIRegistry:
 
     unregister (String name, String registry_host) 
       unregister the remote object from the registry at the host
+
+RMIRemote
+  Interface
+  boolean variable registered : tells if this object was registered
+
+RMIRemoteStub
+
+
+Process outline.
+
+1) Client lookups object by name
+      RMIRemote stub = RMIRegistry.lookup ("name", "host");
+
+2) RMIRegistry at "host" returns the RMIRemote stub to client
+
+3) Client calls method through stub
+      stub.method (... args);
+
+4) Stub marshalls object name, method name, and args[] and sends them to Server
+
+5) Server unmarshalls method name and args[] and invokes the method on the object
+
