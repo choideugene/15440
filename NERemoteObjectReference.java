@@ -1,11 +1,18 @@
+/*
+ * Class: NERemoteObjectReference
+ * Description: Encapsulates server and other information about a remote
+ * object. This class is meant to be the "reference" to a remote object that
+ * can be passed around remotely (as a Serializable object).
+ */
+
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
 
-public class NERemoteObjectReference {
-  String address, remoteInterfaceName;
-  int port;
-  int key;
+public class NERemoteObjectReference implements Serializable {
+  private String address, remoteInterfaceName;
+  private int port;
+  private int key;
 
   public NERemoteObjectReference (String addr, int p, int k, String riname) {
     address = addr;

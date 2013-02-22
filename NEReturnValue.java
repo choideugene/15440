@@ -3,37 +3,27 @@ import java.net.*;
 import java.lang.reflect.*;
 
 public class NEReturnValue implements NEMessageable {
-  Serializable object;
+  private Serializable object;
+  private boolean isRemote;
   
-  public NEReturnValue (Serializable o) {
-    object = o;
+  /*
+   * A new return value packet.
+   * The constructor for a new NEReturnValue. If a non-remote, serializable
+   * object is meant to be the return value, then isRemote should be false.
+   * Otherwise, if the return value should be a remote object, a 
+   * NERemoteObjectReference is expected to be passed in to the constructor
+   * instead, and isRemote should be true.
+   */
+  public NEReturnValue (Serializable object, boolean isRemote) {
+    this.isRemote = isRemote;
+    this.object = object;
   }
   
-  public NEReturnValue (NERemote o) {
-    object = new NERemoteObjectReference (o);
+  public Object getReturnValue () {
+    if (isRemote) {
+      NERemoteObjectReference objectRef = (NERemoteObjectReference) object;
+      return objectRef.localise ();
+    }
+    else return object;
   } 
-  
-  public void sendTo (String file) {
-    try {
-      ObjectOutputStream out = new ObjectOutputStream (new FileOutputStream (file));
-      out.writeObject (exception);
-      out.flush ();
-      out.close ();
-    }
-    catch (Exception e) {
-      e.printStackTrace ();
-    }
-  }
-  
-  public void sendTo (Socket dest) {
-    try {
-      ObjectOutputStream out = new ObjectOutputStream (dest.getOutputStream ());
-      out.writeObject (exception);
-      out.flush ();
-      out.close ();
-    }
-    catch (Exception e) {
-      e.printStackTrace ();
-    }
-  }  
 }

@@ -1,0 +1,29 @@
+import java.io.*;
+import java.net.*;
+import java.lang.reflect.*;
+
+public class NEMarshaller {
+  public static void marshal (Messageable message, OutputStream) {
+    try {
+      ObjectOutputStream out = new ObjectOutputStream (new FileOutputStream (file));
+      out.writeObject (message);
+      out.flush ();
+      out.close ();
+    }
+    catch (Exception e) {
+      e.printStackTrace ();
+    }
+  }
+  
+  public void marshal (Messageable message, Socket dest) {
+    try {
+      ObjectOutputStream out = new ObjectOutputStream (dest.getOutputStream ());
+      out.writeObject (message);
+      out.flush ();
+      out.close ();
+    }
+    catch (Exception e) {
+      e.printStackTrace ();
+    }
+  }  
+}

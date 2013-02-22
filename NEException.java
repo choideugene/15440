@@ -5,31 +5,14 @@ import java.lang.reflect.*;
 public class NEException implements NEMessageable {
   Exception exception;
   
+  /*
+   * A new Exception message packet.
+   */
   public NEException (Exception e) {
     exception = e;
   }
   
-  public void sendTo (String file) {
-    try {
-      ObjectOutputStream out = new ObjectOutputStream (new FileOutputStream (file));
-      out.writeObject (exception);
-      out.flush ();
-      out.close ();
-    }
-    catch (Exception e) {
-      e.printStackTrace ();
-    }
+  public Exception getException () {
+    return exception;
   }
-  
-  public void sendTo (Socket dest) {
-    try {
-      ObjectOutputStream out = new ObjectOutputStream (dest.getOutputStream ());
-      out.writeObject (exception);
-      out.flush ();
-      out.close ();
-    }
-    catch (Exception e) {
-      e.printStackTrace ();
-    }
-  }  
 }

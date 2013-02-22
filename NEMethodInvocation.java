@@ -4,44 +4,33 @@ import java.lang.*;
 import java.lang.reflect.*;
 
 public class NEMethodInvocation implements Serializable {
-  private String className;
-  private String methodName;
-  private String[] argTypes;
+  private int methodId;
+  private Serializable[] args;
+  private boolean[] remote;
 
-  public NEMethod (Class classType, String methodName, Class[] argTypes) {
-    className = classType.getName ();
-    this.methodName = methodName;
-    this.argTypes = new String[argTypes.length];
-    for (int i = 0; i < argTypes.length; i++) {
-      this.argTypes[i] = argTypes[i].getName ();
+  public NEMethodInvocation (int methodId, Serializable[] args, boolean[] remote) {
+    this.methodId = methodId;
+    this.args = new Serializable[args.length];
+    this.remote = new boolean[args.length];
+    for (int i = 0; i < args.length; i++) {
+      this.args[i] = args[i];
+      this.remote[i] = remote[i];
     }
   }
   
-  public String getName () {
-    return methodName;
+  public int getMethodId () {
+    return methodId;
   }
   
-  public Class getObjectType () {
-    try {
-      return Class.forName (className);
-    }
-    catch (ClassNotFoundException e) {
-      e.printStackTrace ();
-      return null;
-    }
-  }
-  
-  public Class[] getArgTypes () {
-    try {
-      Class[] argTypes = new Class[this.argTypes.length];
-      for (int i = 0; i < argTypes.length; i++) {
-        argTypes[i] = Class.forName (this.argTypes[i]);
+  public Object[] getArguments () {
+    Object[] arguments = new Object[args.length];
+    for (int i = 0; i < args.length; i++) {
+      if (remote[i]) {
+        NERemoteObjectReference objectRef = (NERemoteObjectReference) args[i];
+        arguments[i] = objectRef.localise ();
       }
-      return argTypes;
+      else arguments[i] = args[i];      
     }
-    catch (ClassNotFoundException e) {
-      e.printStackTrace ();
-      return null;
-    }
+    return arguments;
   }
 }
