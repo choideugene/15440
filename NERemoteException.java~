@@ -1,0 +1,7 @@
+import java.io.*;
+import java.net.*;
+import java.lang.reflect.*;
+
+public class NERemoteException extends IOException {
+  
+}

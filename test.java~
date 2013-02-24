@@ -57,7 +57,7 @@ class test {
       ex.printStackTrace ();
       in.close ();*/
       
-      Numbers n = new Numbers (10,3.0,'a');
+      Numbers n = new Numbers (10,3.14,'a');
       FileOutputStream out = new FileOutputStream ("out");
       Class<?> objectType = n.getClass ();
       Class<?>[] argTypes = { };

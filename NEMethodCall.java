@@ -14,13 +14,12 @@ public class NEMethodCall {
     }
   }
   
-  public Object invoke (Object object) {
-    try {
-      return method.invoke (object, args);
-    }
-    catch (Exception e) {
-      e.printStackTrace ();
-    }
-    return null;
+  /*
+   * Returns the return value of the method invocation if successful.
+   */
+  public Object invoke (Object object)
+      throws IllegalAccessException, IllegalArgumentException,
+             InvocationTargetException {
+    return method.invoke (object, args);
   }
 }
