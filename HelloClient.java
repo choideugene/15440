@@ -9,8 +9,9 @@ public class HelloClient {
   public static void main (String[] args) {
     try {
       //System.setSecurityManager (new RMISecurityManager());
-      Registry registry = LocateRegistry.getRegistry("localhost");
-      Hello_Stub hello = (Hello_Stub) registry.lookup("hello");
+      /*Registry registry = LocateRegistry.getRegistry("localhost");
+      Hello_Stub hello = (Hello_Stub) registry.lookup("hello");*/
+      Hello_Stub hello = new Hello_Stub ();
 
       String theGreeting = hello.sayHello (args[0]);
 

@@ -10,6 +10,9 @@ import java.rmi.*;
 import java.rmi.server.*;
 
 public final class Hello_Stub extends NERemoteObjectStub implements HelloInterface, NERemote {
+  public Hello_Stub () {
+  }
+
   public String sayHello (String s) throws NERemoteException {
     try {
       Class<?>[] argTypes = { String.class };

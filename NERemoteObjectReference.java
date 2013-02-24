@@ -10,18 +10,54 @@ import java.net.*;
 import java.lang.reflect.*;
 
 public class NERemoteObjectReference implements Serializable {
-  private String address, remoteInterfaceName;
+  private String hostAddress, remoteInterfaceName;
   private int port;
   private int key;
 
   public NERemoteObjectReference (String addr, int p, int k, String riname) {
-    address = addr;
+    hostAddress = addr;
     port = p;
     remoteInterfaceName = riname;
     key = k;
   }
+  
+  public String getHostAddress () {
+    return hostAddress;
+  }
+  
+  public int getPort () {
+    return port;
+  }
+  
+  public int getKey () {
+    return key;
+  }
+  
+  public String getRemoteInterfaceName () {
+    return remoteInterfaceName;
+  }
 
-  Object localise () {
+  public NERemoteObjectStub localise () {
+    // 1. Check if riname + "_Stub" class exists
+    // 2. If not, automatically create it
+    try {
+      String stubTypeName = remoteInterfaceName + "_Stub";
+      Class stubType = Class.forName (stubTypeName);
+      NERemoteObjectStub stub = (NERemoteObjectStub) stubType.newInstance ();
+      stub.init (this);
+      return stub;
+    }
+    catch (ClassNotFoundException e) {
+      // generate stub, etc
+    }
+    catch (IllegalAccessException e) {
+    
+    }    
+    catch (InstantiationException e) {
+    
+    }
+    return null;
+    
     // Implement this as you like: essentially you should 
     // create a new stub object and returns it.
     // Assume the stub class has the name e.g.
@@ -39,6 +75,6 @@ public class NERemoteObjectReference implements Serializable {
     // arguments etc., in a marshalled form, and CM (yourRMI) sends it out to 
     // another place. 
     // Here let it return null.
-    return null;
+    //return null;
   }
 }

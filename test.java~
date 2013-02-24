@@ -3,7 +3,12 @@ import java.rmi.registry.*;
 import java.io.*;
 
 class test {
-  public static class Numbers implements Serializable {
+  public static interface Numberable extends Serializable {
+    public void add ();
+    public String toString ();
+  }
+
+  public static class Numbers implements Serializable, Numberable {
     public int a;
     public double b;
     public char c;
@@ -57,15 +62,19 @@ class test {
       ex.printStackTrace ();
       in.close ();*/
       
-      Numbers n = new Numbers (10,3.14,'a');
+      Numberable x = null;
+      System.out.println (x.getClass ());
+      
+      Numberable n = (Numberable) (new Numbers (10,3.0,'a'));
       FileOutputStream out = new FileOutputStream ("out");
       Class<?> objectType = n.getClass ();
+      System.out.println (Numberable.class);
       Class<?>[] argTypes = { };
       boolean[] argRemotes = {  };
       Serializable[] arguments = { };
       NEMarshaller.marshal (
         new NEMethodInvocation 
-          (objectType, "add", argTypes, arguments, argRemotes),
+          (Numberable.class, "add", argTypes, arguments, argRemotes),
         out);
       
       out.close ();
@@ -78,6 +87,7 @@ class test {
       nn.invoke (n);
       nn.invoke (n);
       System.out.println (n);
+      System.out.println (n.getClass ());
       
       in.close ();
     }
