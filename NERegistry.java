@@ -11,7 +11,7 @@ public class NERegistry extends NERemote {
 
 	public static int REGISTRY_PORT = 1099; //well known port for registry
 	
-	private HashMap reg;
+	private ConcurrentHashMap reg;
 	private ServerSocket serverSocket;
 	private Socket socket;
 	private ObjectOutputStream outputStream;
@@ -21,7 +21,7 @@ public class NERegistry extends NERemote {
 	
 	//localhost
 	public NERegistry() { 
-		HashMap<String, NERemoteObjectReference> reg = new HashMap();
+		ConcurrentHashMap<String, NERemoteObjectReference> reg = new HashMap();
 		serverSocket = new ServerSocket(REGISTRY_PORT);
 		host = "localhost";
 		listen();
