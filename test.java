@@ -1,6 +1,8 @@
 import java.rmi.*;
 import java.rmi.registry.*;
 import java.io.*;
+import java.net.*;
+import java.lang.reflect.*;
 
 class test {
   public static interface Numberable extends Serializable {
@@ -62,7 +64,24 @@ class test {
       ex.printStackTrace ();
       in.close ();*/
       
-      Numberable n = (Numberable) (new Numbers (10,3.0,'a'));
+      try {
+        Class<?>[] argTypes = { String.class };
+        Serializable[] arguments = { "asdf" };
+        NEMethodInvocation message =
+          new NEMethodInvocation 
+            (123, HelloInterface.class, "sayHello", argTypes, arguments); 
+        
+        Class[] at = message.getArgumentTypes ();
+        for (Class c : at) System.out.println (c); 
+             
+        Method m = message.getObjectType ().getMethod (
+          message.getMethodName (), argTypes);
+      }
+      catch (Exception e) {
+        e.printStackTrace ();
+      }
+      
+      /*Numberable n = (Numberable) (new Numbers (10,3.0,'a'));
       FileOutputStream out = new FileOutputStream ("out");
       Class<?> objectType = n.getClass ();
       System.out.println (Numberable.class);
@@ -84,9 +103,9 @@ class test {
       nn.invoke (n);
       nn.invoke (n);
       System.out.println (n);
-      System.out.println (n.getClass ());
+      System.out.println (n.getClass ());*/
       
-      in.close ();
+      //in.close ();
     }
     catch (Exception e) {
       e.printStackTrace();

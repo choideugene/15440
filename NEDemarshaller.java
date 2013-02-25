@@ -7,12 +7,23 @@ public class NEDemarshaller {
     return message.getException ();
   }
   
+  /*
+   * Returns the return value stored in the message. If the return value is
+   * a remote object reference, then the remote object stub is returned.
+   */
   public static Object demarshalReturnValue (NEReturnValue message) {
-    return message.getReturnValue ();
+    Object rv = message.getReturnValue ();
+    
+    // Return value is a remote object
+    if (rv.getClass ().toString ().equals ("NERemoteObjectReference")) {
+      return ((NERemoteObjectReference) rv).localise ();
+    }
+    else return rv;
   }
   
   // TODO: methodDatabase should be mapping methodId to Method objects
-  public static NEMethodCall demarshalMethodInvocation (NEMethodInvocation message)
+  public static NEMethodCall demarshalMethodInvocation 
+    (NEMethodInvocation message, NERemoteObjectTable table)
       throws NoSuchMethodException, SecurityException {
     Method method = null;
     
@@ -21,7 +32,13 @@ public class NEDemarshaller {
     }
     else  {
       try {
+        System.out.println (message);
         Class<?> objectType = message.getObjectType ();
+        Method[] ms = objectType.getMethods ();
+        for (int i = 0; i < ms.length; i++) {
+          System.out.println (ms[i]);
+        }        
+        System.out.println (objectType);
         method = objectType.getMethod (
           message.getMethodName (), message.getArgumentTypes ());        
       }
@@ -32,6 +49,9 @@ public class NEDemarshaller {
     }
     
     Object[] args = message.getArguments ();
-    return new NEMethodCall (method, args);
+    NERemote object = table.get (message.getObjectKey ()); // TODO: error check
+    System.out.println (message.getObjectKey ());
+    System.out.println (object);
+    return new NEMethodCall (object, method, args);
   }  
 }

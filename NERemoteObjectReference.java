@@ -42,6 +42,7 @@ public class NERemoteObjectReference implements Serializable {
     // 2. If not, automatically create it
     try {
       String stubTypeName = remoteInterfaceName + "_Stub";
+      System.out.println ("Stubname: " + stubTypeName);
       Class stubType = Class.forName (stubTypeName);
       NERemoteObjectStub stub = (NERemoteObjectStub) stubType.newInstance ();
       stub.init (this);
@@ -49,12 +50,13 @@ public class NERemoteObjectReference implements Serializable {
     }
     catch (ClassNotFoundException e) {
       // generate stub, etc
+      e.printStackTrace ();
     }
     catch (IllegalAccessException e) {
-    
+      e.printStackTrace ();
     }    
     catch (InstantiationException e) {
-    
+      e.printStackTrace ();
     }
     return null;
     
@@ -77,4 +79,19 @@ public class NERemoteObjectReference implements Serializable {
     // Here let it return null.
     //return null;
   }
+  
+  public boolean equals (Object o) {
+    NERemoteObjectReference r = (NERemoteObjectReference) o;
+    return (r.getHostAddress ().equals (hostAddress) &&
+            r.getRemoteInterfaceName ().equals (remoteInterfaceName) &
+            r.getPort () == port &&
+            r.getKey () == key);
+  }
+  
+  public String toString () {
+    return "Address: " + hostAddress + "\n" +
+           "Port   : " + port + "\n" +
+           "RIName : " + remoteInterfaceName + "\n" +
+           "Key    : " + key + "\n";
+  } 
 }

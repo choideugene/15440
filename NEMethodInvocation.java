@@ -1,3 +1,8 @@
+/*
+ * All the arguments are either Serializable non-remote objects or
+ * RemoteObjectReferences that represent the remote objects
+ */
+
 import java.io.*;
 import java.net.*;
 import java.lang.*;
@@ -10,21 +15,20 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
   private String objectType;
   private String methodName;
   private String[] argTypes;
+  private int objectKey;
   
   private Serializable[] args;
-  private boolean[] remote;
 
   /* 
    * If the method id is known, create a NEMethodInvocation object with that.
    */
-  public NEMethodInvocation (int methodId, Serializable[] args, boolean[] remote) {
+  public NEMethodInvocation (int objectKey, int methodId, Serializable[] args) {
     usingId = true;
+    this.objectKey = objectKey;
     this.methodId = methodId;
     this.args = new Serializable[args.length];
-    this.remote = new boolean[args.length];
     for (int i = 0; i < args.length; i++) {
       this.args[i] = args[i];
-      this.remote[i] = remote[i];
     }
   }
   
@@ -32,18 +36,17 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
    * If the method id is not known, create a NEMethodInvocation object 
    * from the method name and method parameter types.
    */
-  public NEMethodInvocation (String objectType, String methodName, 
-      String[] argTypes, Serializable[] args, boolean[] remote) {
+  public NEMethodInvocation (int objectKey, String objectType, String methodName, 
+      String[] argTypes, Serializable[] args) {
     usingId = false;
+    this.objectKey = objectKey;
     this.objectType = objectType;
     this.methodName = methodName;
     this.argTypes = new String[args.length];
     this.args = new Serializable[args.length];
-    this.remote = new boolean[args.length];
     for (int i = 0; i < args.length; i++) {
       this.argTypes[i] = argTypes[i];
       this.args[i] = args[i];
-      this.remote[i] = remote[i];
     }
   }
   
@@ -51,18 +54,17 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
    * If the method id is not known, create a NEMethodInvocation object 
    * from the method name and method parameter types.
    */
-  public NEMethodInvocation (Class<?> objectType, String methodName, 
-      Class<?>[] argTypes, Serializable[] args, boolean[] remote) {
+  public NEMethodInvocation (int objectKey, Class<?> objectType, String methodName, 
+      Class<?>[] argTypes, Serializable[] args) {
     usingId = false;
+    this.objectKey = objectKey;
     this.objectType = objectType.getName ();
     this.methodName = methodName;
     this.argTypes = new String[args.length];
     this.args = new Serializable[args.length];
-    this.remote = new boolean[args.length];
     for (int i = 0; i < args.length; i++) {
       this.argTypes[i] = argTypes[i].getName ();    
       this.args[i] = args[i];
-      this.remote[i] = remote[i];
     }
   }  
   
@@ -82,9 +84,13 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
     return methodName;
   }
   
+  public int getObjectKey () {
+    return objectKey;
+  }
+  
   public Class<?>[] getArgumentTypes () throws ClassNotFoundException {
     Class<?>[] argTypes = new Class<?>[args.length];
-    if (! usingId) return null;
+    if (usingId) return null;
     
     for (int i = 0; i < args.length; i++) {
       argTypes[i] = Class.forName (this.argTypes[i]);   
@@ -95,7 +101,8 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
   public Object[] getArguments () {
     Object[] arguments = new Object[args.length];
     for (int i = 0; i < args.length; i++) {
-      if (remote[i]) {
+      // Argument is remote object
+      if (args[i].getClass ().equals (NERemoteObjectReference.class)) {
         NERemoteObjectReference objectRef = (NERemoteObjectReference) args[i];
         arguments[i] = objectRef.localise ();
       }
@@ -103,4 +110,19 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
     }
     return arguments;
   }
+  
+  public String toString () {
+    String s = "";
+    s += "Method name: " + methodName + "\n";
+    s += "Object type: " + objectType + "\n";
+    s += "Arg types  : " + "\n";
+    for (int i = 0; i < argTypes.length; i++) {
+      s += "\t" + argTypes[i] + "\n";
+    }
+    s += "Args  : " + "\n";
+    for (int i = 0; i < args.length; i++) {
+      s += "\t" + args[i] + "\n";
+    }
+    return s;
+  }  
 }

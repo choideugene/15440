@@ -10,23 +10,26 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.net.*;
 
-public final class Hello_Stub extends NERemoteObjectStub implements HelloInterface, NERemote {
+public final class HelloInterface_Stub extends NERemoteObjectStub implements HelloInterface, NERemote {
   public String sayHello (String s) throws NERemoteException {
     try {
       Class<?>[] argTypes = { String.class };
       Serializable[] arguments = { s };
+      System.out.println (getKey ());
       NEMessageable message =
         new NEMethodInvocation 
           (getKey (), HelloInterface.class, "sayHello", argTypes, arguments);
       
-      Socket reg = new Socket ("localhost", 5000);
+      Socket reg = new Socket ("localhost", 5001);
+      System.out.println ("Connected to object server");
            
       NEMarshaller.marshal (message, reg.getOutputStream ());
-      Scanner inp = new Scanner (System.in);
-      inp.nextLine ();
+      System.out.println ("Marhsalled method invocation");
       
       ObjectInputStream in = new ObjectInputStream (reg.getInputStream ());
       NEReturnValue rv = (NEReturnValue) in.readObject ();
+      System.out.println ("Received return value");
+      
       String result = (String) NEDemarshaller.demarshalReturnValue (rv);
       return result;   
     }

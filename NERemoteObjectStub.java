@@ -19,4 +19,8 @@ public class NERemoteObjectStub implements NERemote {
     return new NERemoteObjectReference 
         (hostAddress, port, key, remoteInterfaceName);
   }
+  
+  public int getKey () {
+    return key;
+  }
 }

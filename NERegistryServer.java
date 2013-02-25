@@ -24,7 +24,9 @@ public class NERegistryServer {
     }).start ();
     new Thread (new Runnable () {
       public void run () { executeLoop (); }
-    }).start ();    
+    }).start ();
+    
+    System.out.println ("Registry Server Started");
   }
   
   /*
@@ -38,14 +40,23 @@ public class NERegistryServer {
     while (true) {
       while (commands.isEmpty ()) {
         try {
-          Thread.sleep (10);
+          Thread.sleep (100);
         }
         catch (InterruptedException e) {
           // Should not reach here
           continue;
         }
       }
+      
+      System.out.println (commands);
       executeCommand (commands.remove ());
+      
+      // Execute command in new thread
+      /*new Thread (new Runnable () {
+        public void run () { 
+          executeCommand (commands.remove ());
+        }
+      }).start ();*/
     }
   }
   
@@ -116,14 +127,15 @@ public class NERegistryServer {
       }
       
       out.close ();
+      client.close ();
     }
     catch (SocketException e) {
       // Ignore
-      System.out.println (e);
+      e.printStackTrace ();
     }
     catch (IOException e) {
       // Ignore
-      System.out.println (e);
+      e.printStackTrace ();
     }
   }  
     
@@ -133,19 +145,23 @@ public class NERegistryServer {
    * should execute:
    *    l = lookup
    *    r = rebind
+   *    u = unbind
    *    p = list
    *    a = ask (Are you a registry server?)
    */
   // TODO: fixup closing streams on exceptions
   private void acceptLoop () {
     while (true) {
+      Socket client = null;
+      NERegistryCommand command;
       try {
-        Socket client = listener.accept ();
+        client = listener.accept ();
         
-        NERegistryCommand command = new NERegistryCommand (client);
+        command = new NERegistryCommand (client);
         ObjectInputStream in = new ObjectInputStream (client.getInputStream ());
         
         char request = in.readChar ();
+        System.out.println ("Request: " + request);
         command.addPart (new Character (request));
         
         switch (request) {
@@ -165,6 +181,10 @@ public class NERegistryServer {
             commands.add (command);
             break;
             
+          // umbind
+          case 'u':
+            break;          
+            
           // list
           case 'p':
             commands.add (command);
@@ -177,22 +197,38 @@ public class NERegistryServer {
             
           // not a command
           default :
-            break;                  
+            break;           
         }
-        
-        in.close ();
       }
       catch (ClassNotFoundException e) {
         // Should not reach here
+        try {
+          if (client != null) client.close ();
+        }
+        catch (IOException ex) {
+          // ignore
+        }
         continue;
       }
       catch (SocketException e) {
         // Ignore
+        try {
+          if (client != null) client.close ();
+        }
+        catch (IOException ex) {
+          // ignore
+        }
         continue;
       }
       catch (IOException e) {
         //System.out.println ("Could not accept slave connection on port " + 
         //                    localport + ": " +e);
+        try {
+          if (client != null) client.close ();
+        }
+        catch (IOException ex) {
+          // ignore
+        }
         continue;
       }
     }
@@ -204,6 +240,7 @@ public class NERegistryServer {
     
     public NERegistryCommand (Socket client) {
       this.client = client;
+      this.command = new LinkedList<Object> ();
     }
     
     public void addPart (Object o) {
@@ -216,6 +253,10 @@ public class NERegistryServer {
     
     public Object removePart () {
       return command.remove ();
+    }
+    
+    public String toString () {
+      return command.toString ();
     }
   }
 }
