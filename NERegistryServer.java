@@ -1,0 +1,221 @@
+import java.io.*;
+import java.net.*;
+import java.lang.reflect.*;
+import java.util.concurrent.*;
+import java.util.*;
+
+public class NERegistryServer {
+  private ConcurrentHashMap<String,NERemoteObjectReference> table;
+  private int port;
+  
+  private LinkedList<NERegistryCommand> commands;
+  
+  private ServerSocket listener;
+  
+  public NERegistryServer (int port) 
+      throws SocketException, IOException {
+    this.port = port;
+    table = new ConcurrentHashMap<String,NERemoteObjectReference> ();
+    listener = new ServerSocket (port);
+    commands = new LinkedList<NERegistryCommand> ();
+    
+    new Thread (new Runnable () {
+      public void run () { acceptLoop (); }
+    }).start ();
+    new Thread (new Runnable () {
+      public void run () { executeLoop (); }
+    }).start ();    
+  }
+  
+  /*
+   * Execution loop
+   */
+  // TODO: fixup closing streams on exceptions
+  private void executeLoop () {
+    String name, addr, riname;
+    int port, key;
+    
+    while (true) {
+      while (commands.isEmpty ()) {
+        try {
+          Thread.sleep (10);
+        }
+        catch (InterruptedException e) {
+          // Should not reach here
+          continue;
+        }
+      }
+      executeCommand (commands.remove ());
+    }
+  }
+  
+  /*
+   * Execute requested command. 
+   * The following symbols are flags to indicate certain results after
+   * the execution of some of the above commands:
+   *    f = requested object found
+   *    n = requested object not found
+   *    a = rebind successful
+   *    y = this is a registry server
+   */ 
+  
+  // TODO: fixup closing streams on exceptions
+  private void executeCommand (NERegistryCommand command) {
+    String name, addr, riname;
+    int port, key;
+    
+    try {
+      Socket client = command.getClient ();
+      ObjectOutputStream out = new ObjectOutputStream (client.getOutputStream ());
+      
+      char request = (Character) command.removePart ();
+      
+      switch (request) {
+        // lookup
+        case 'l': 
+          name = (String) command.removePart ();
+          if (table.containsKey (name)) {
+            out.writeChar ('f');
+            out.writeObject (table.get (name));
+          }
+          else out.writeChar ('n');
+          out.flush ();
+          break;
+        
+        // rebind
+        case 'r':
+          name = (String) command.removePart ();
+          addr = (String) command.removePart ();
+          port = (Integer) command.removePart ();
+          key = (Integer) command.removePart ();
+          riname = (String) command.removePart ();
+          
+          NERemoteObjectReference ref = 
+            new NERemoteObjectReference (addr, port, key, riname);
+          table.put (name, ref);
+          
+          out.writeChar ('a');
+          out.flush ();
+          break;
+          
+        // list
+        case 'p':
+          out.writeInt (table.size ());
+          for (String n : table.keySet ()) {
+            out.writeObject (n);
+            out.writeObject (table.get (n));
+          }
+          out.flush ();
+          break;     
+        
+        // ask
+        case 'a':
+          out.writeChar ('y');
+          out.flush ();
+          break;
+      }
+      
+      out.close ();
+    }
+    catch (SocketException e) {
+      // Ignore
+      System.out.println (e);
+    }
+    catch (IOException e) {
+      // Ignore
+      System.out.println (e);
+    }
+  }  
+    
+  /*
+   * Listen for incoming requests.
+   * The following symbols indicate various commands the registry server
+   * should execute:
+   *    l = lookup
+   *    r = rebind
+   *    p = list
+   *    a = ask (Are you a registry server?)
+   */
+  // TODO: fixup closing streams on exceptions
+  private void acceptLoop () {
+    while (true) {
+      try {
+        Socket client = listener.accept ();
+        
+        NERegistryCommand command = new NERegistryCommand (client);
+        ObjectInputStream in = new ObjectInputStream (client.getInputStream ());
+        
+        char request = in.readChar ();
+        command.addPart (new Character (request));
+        
+        switch (request) {
+          // lookup
+          case 'l': 
+            command.addPart ((String) in.readObject ());
+            commands.add (command);
+            break;
+          
+          // rebind
+          case 'r':
+            command.addPart ((String) in.readObject ());
+            command.addPart ((String) in.readObject ());
+            command.addPart (new Integer (in.readInt ()));
+            command.addPart (new Integer (in.readInt ()));
+            command.addPart ((String) in.readObject ());
+            commands.add (command);
+            break;
+            
+          // list
+          case 'p':
+            commands.add (command);
+            break;
+            
+          // ask
+          case 'a':
+            commands.add (command);
+            break;       
+            
+          // not a command
+          default :
+            break;                  
+        }
+        
+        in.close ();
+      }
+      catch (ClassNotFoundException e) {
+        // Should not reach here
+        continue;
+      }
+      catch (SocketException e) {
+        // Ignore
+        continue;
+      }
+      catch (IOException e) {
+        //System.out.println ("Could not accept slave connection on port " + 
+        //                    localport + ": " +e);
+        continue;
+      }
+    }
+  }
+  
+  private class NERegistryCommand {
+    private Socket client;
+    private LinkedList<Object> command;
+    
+    public NERegistryCommand (Socket client) {
+      this.client = client;
+    }
+    
+    public void addPart (Object o) {
+      command.add (o);
+    }
+    
+    public Socket getClient () {
+      return client;
+    }
+    
+    public Object removePart () {
+      return command.remove ();
+    }
+  }
+}
