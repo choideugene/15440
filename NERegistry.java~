@@ -1,127 +1,178 @@
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
+import java.util.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-public class NERegistry {
-  private HashMap<String,NERemoteObjectReference> table;
-  private String address;
-  private int host;
-  
-  public NERegistry (String addr, int port) {
-    address = addr;
-    this.port = port;
-    table = new HashMap<String,NERemoteObjectReference> ();
-  }
-  
-  public NERemoteObjectReference lookup (String name) 
-      throws SocketException, IOException {
-    NERemoteObjectReference result = null;
-    Socket socket = new Socket (host, port);
-    System.out.println ("Connected to registry server");
-    
-    ObjectInputStream in = new ObjectInputStream (socket.getInputStream ());
-    ObjectOutputStream out = new ObjectOutputStream (socket.getOutputStream ());
+import java.util.HashMap;
 
-	  System.out.println("Streams prepared");
-	  
-	  try {
-	    out.writeChar ('l');
-	    out.writeString (name);
-	    char result = in.readChar ();
-	    if (result == 'f') {
-	      System.out.println ("Found object " + name);
-  	    NERemoteObjectReference ref = (NERemoteObjectReference) in.readObject ();
-	      result = ref;
-	    }
-	    else {
-	      System.out.println ("Did not find object " + name);
-	    }
-	  }
-	  catch (ClassNotFoundException e) {
-	    // Should not reach here
-	  }
-	  
-	  socket.close ();
-	  return result;
+public class NERegistry extends NERemote {
+
+	public static int REGISTRY_PORT = 1099; //well known port for registry
+	
+	private HashMap reg;
+	private ServerSocket serverSocket;
+	private Socket socket;
+	private ObjectOutputStream outputStream;
+	private ObjectInputStream inputStream;
+	private String host;
+	private int port;
+	
+	//localhost
+	public NERegistry() { 
+		HashMap<String, NERemoteObjectReference> reg = new HashMap();
+		serverSocket = new ServerSocket(REGISTRY_PORT);
+		host = "localhost";
+		listen();
 	}
-	  
+	
+	public NERegistry(String host) {
+		this.host = host;
+		this.port = REGISTRY_PORT;
+	}
+	
+	public NERegistry(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}
+	
+	
+	private void listen() {
+		Socket socket;
+		while (true) {
+			try {
+				socket = serverSocket.accept();
+				NERegistryThread regThread = new NERegistryThread(this, socket);
+				regThread.start();
+			} catch (IOException ex) {
+				System.out.println("error accepting socket: " + ex.toString());
+			}
+		}
+	}
+	
+	public String[] list() throws NERemoteException, NEAccessException {
+		if (host.equals("localhost")) {
+			return localList();
+		}
+		return remoteList();
+	}
+	
+	private String[] localList() {
+		Set<String> set = (HashSet) reg.keySet();
+		return (set.toArray(new String[0]));
+	}
+	
+	private String[] remoteList() throws NERemoteException, NEAccessException {
+		openRequest();
+		try {
+			outputStream.writeInt(0);
+			outputStream.flush();
+			int code = inputStream.readInt();
+			Object obj = inputStream.readObject();
+			if (code < 0) {
+				Exception ex = (Exception) obj;
+				System.out.println("error in remotelookup response: " + ex.toString());
+				throw ex;
+			} else {
+				return (String[]) obj;
+			}
+		} catch(Exception ex) {
+			System.out.println("datastream error in remotelookup: " + ex.toString());
+			throw new NERemoteException();
+		} finally {
+			closeRequest();
+		}
+	}
 
-	// it is locate request, with a service name.
-	out.println("lookup");
-	out.println(serviceName);
+	public NERemoteObjectReference lookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
+		if (host.equals("localhost")) { 
+			return localLookup(name);
+		} 
+		return remoteLookup(name);
+	}
 
-	System.out.println("command and service name sent.");
-
-	// branch according to the answer.
-	String res = in.readLine();
-	RemoteObjectRef ror;
-
-	if (res.equals("found"))
-	    {
-
-		System.out.println("it is found!.");
-
-		// receive ROR data, witout check.
-		String ro_IPAdr = in.readLine();
-
-		System.out.println(ro_IPAdr);
-
-		int ro_PortNum = Integer.parseInt(in.readLine());
-
-		System.out.println(ro_PortNum);
-
-		int ro_ObjKey = Integer.parseInt(in.readLine());
-
-		System.out.println(ro_ObjKey);
-
-		String ro_InterfaceName = in.readLine();
-
-		System.out.println(ro_InterfaceName);
-
+	private NERemoteObjectReference remoteLookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
+		openRequest();
+		try {
+			outputStream.writeInt(1);
+			outputStream.writeObject(name);
+			outputStream.flush();
+			int code = inputStream.readInt();
+			Object obj = inputStream.readObject();
+			if (code < 0) {
+				Exception ex = (Exception) obj;
+				System.out.println("error in remotelookup response: " + ex.toString());
+				throw ex;
+			} else {
+				return (NERemoteObjectReference) obj;
+			}
+		} catch(Exception ex) {
+			System.out.println("datastream error in remotelookup: " + ex.toString());
+			throw new NERemoteException();
+		} finally {
+			closeRequest();
+		}
+	}
+	
+	private NERemoteObjectReference localLookup(String name) throws  NENotBoundException {
+		NERemoteObjectReference ror;
+		if ((ror = reg.get(name)) == null) {
+			throw new NENotBoundException();
+		}
+		return ror;
+	}
+	
+	public void bind(String name, NERemoteObjectReference obj) throws NERemoteException, NEAlreadyBoundException, NEAccessException{
+		if (!host.equals("localhost")) {
+			throw new NEAccessException();
+		}
+		if (reg.containsKey(name)) {
+			throw new NEAlreadyBoundException();
+		}
+		reg.put(name, obj);
+	}
+	
+	public void rebind(String name, NERemoteObjectReference obj) throws NERemoteException, NEAccessException {
+		if (!host.equals("localhost")) {
+			throw new NEAccessException();
+		}
+		reg.put(name, obj);
+	}
+	
+	public void unbind (String name) throws NERemoteException, NENotBoundException, NEAccessException {
+		if (!host.equals("localhost")) {
+			throw new NEAccessException();
+		}
+		if (reg.remove(name) == null) {
+			throw new NENotBoundException();
+		}
+	}
 		
-		// make ROR.
-		ror = new RemoteObjectRef(ro_IPAdr, ro_PortNum, ro_ObjKey, ro_InterfaceName);
-	    }
-	else		
-	    {
-		System.out.println("it is not found!.");
+	private void openRequest() throws NERemoteException {
+		try{ 
+			this.socket = new Socket(host, REGISTRY_PORT);
+			this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+			this.inputStream = new ObjectInputStream(socket.getInputStream());
+		} catch (Exception ex) {
+			throw new NERemoteException(ex.toString());
+		}
+	}
+	
+	private void closeRequest() {
+		try { 
+			outputStream.close();
+			inputStream.close();
+		} catch (IOException ex) {
+			System.out.println("error closing streams: " + ex.toString());
+		}
+		try {
+			socket.close();
+		} catch (IOException ex) {
+			System.out.println("error closing socket: " + ex.toString());
+		}
+	}
+	
+	
 
-		ror = null;
-	    }
-
-	// close the socket.
-	soc.close();
-		
-	// return ROR.
-	return ror;
-    }
-
-    // rebind a ROR. ROR can be null. again no check, on this or whatever. 
-    // I hate this but have no time.
-    public void rebind(String serviceName, RemoteObjectRef ror) 
-	throws IOException
-    {
-	// open socket. same as before.
-	Socket soc = new Socket(Host, Port);
-	    
-	// get TCP streams and wrap them. 
-	BufferedReader in = 
-	    new BufferedReader(new InputStreamReader (soc.getInputStream()));
-	PrintWriter out = 
-	    new PrintWriter(soc.getOutputStream(), true);
-
-	// it is a rebind request, with a service name and ROR.
-	out.println("rebind");
-	out.println(serviceName);
-	out.println(ror.IP_adr);
-	out.println(ror.Port); 
-	out.println(ror.Obj_Key);
-	out.println(ror.Remote_Interface_Name);
-
-	// it also gets an ack, but this is not used.
-	String ack = in.readLine();
-
-	// close the socket.
-	soc.close();
-    }  
 }
