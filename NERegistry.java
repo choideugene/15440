@@ -109,11 +109,11 @@ public class NERegistry  {
 		}
 	}
 
-	public NERemoteObjectReference lookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
+	public NERemote lookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
 		if (host.equals("localhost")) { 
-			return localLookup(name);
+			return localLookup(name).localise ();
 		} 
-		return remoteLookup(name);
+		return remoteLookup(name).localise ();
 	}
 
 	private NERemoteObjectReference remoteLookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
