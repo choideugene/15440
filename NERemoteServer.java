@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public abstract class NERemoteServer { 
+  /*
 	private static NERemoteObjectTable objTable;
 	public static int REGISTRY_PORT = 1099;
 	
@@ -72,4 +73,5 @@ public abstract class NERemoteServer {
 		NERemoteServerThread rst = threadPool.remove(key);
 		rst.running = false;;
 	}
+  */
 }
