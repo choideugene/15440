@@ -1,15 +1,18 @@
-import java.io.*;
-import java.net.*;
-import java.lang.reflect.*;
+/*
+ * Class      : NERemoteException.java
+ * Authors    : Eugene Choi, Norbert Chu
+ * Andrew IDs : dechoi, nrchu
+ * Description: This class encapsulates all exceptions generated during the
+ *              communication between the client and server side of RMI.
+ */
+ 
+import java.io.IOException;
 
 public class NERemoteException extends IOException {
-  private String message;
-  
-  public NERemoteException (String s) {
-    message = s;
+  public NERemoteException () {
   }
   
-  public String getMessage () {
-    return message;
+  public NERemoteException (String message) {
+    super (message);
   }
 }

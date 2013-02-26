@@ -16,32 +16,48 @@ public final class HelloInterface_Stub extends NERemoteObjectStub implements Hel
       Class<?>[] argTypes = { String.class };
       Serializable[] arguments = { s };
       System.out.println (getKey ());
-      NEMessageable message =
+      NEMethodInvocation message =
         new NEMethodInvocation 
           (getKey (), HelloInterface.class, "sayHello", argTypes, arguments);
       
       Socket reg = new Socket ("localhost", 5001);
       System.out.println ("Connected to object server");
            
-      NEMarshaller.marshal (message, reg.getOutputStream ());
+      NEMarshaller.marshalMethodInvocation (message, reg.getOutputStream ());
       System.out.println ("Marhsalled method invocation");
       
       ObjectInputStream in = new ObjectInputStream (reg.getInputStream ());
-      NEReturnValue rv = (NEReturnValue) in.readObject ();
-      System.out.println ("Received return value");
+      char rtype = in.readChar ();
+      if (rtype == 'e') {
+        NEException ex = (NEException) in.readObject ();
+        System.out.println ("Received exception");
+        
+        reg.close ();
+        throw ex.getException ();
+      }
+      else if (rtype == 'r') {
+        NEReturnValue rv = (NEReturnValue) in.readObject ();
+        System.out.println ("Received return value");
       
-      String result = (String) NEDemarshaller.demarshalReturnValue (rv);
-      return result;   
+        String result = (String) NEDemarshaller.demarshalReturnValue (rv);
+        reg.close ();
+        return result;
+      } 
     }
-    catch (RuntimeException runtimeexception) {
-      throw runtimeexception;
+    catch (SocketException e) {
+      throw new NERemoteException ("Communication with server failed");
+    }    
+    catch (IOException e) {
+      throw new NERemoteException ("Communication with server failed");
     }
-    catch (NERemoteException remoteexception) {
-      throw remoteexception;
+    catch (ClassNotFoundException e) {
+      // Should not reach here
     }
-    catch (Exception exception) {
-      //throw new UnexpectedException("undeclared checked exception", exception);
-      exception.printStackTrace ();
+    catch (RuntimeException e) {
+      throw e;
+    }
+    catch (Exception e) {
+    
     }
     return null;
   }

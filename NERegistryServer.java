@@ -1,3 +1,13 @@
+/*
+ * Class      : NERegsitryServer.java
+ * Authors    : Eugene Choi, Norbert Chu
+ * Andrew IDs : dechoi, nrchu
+ * Description: This is where the heart of the RMI registry is. The table
+ *              mapping names to remote object references are here, and this
+ *              class deals with the registry commands (lookup, bind, rebind,
+ *              unbind, list)
+ */
+
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
@@ -12,6 +22,9 @@ public class NERegistryServer {
   
   private ServerSocket listener;
   
+  /*
+   * New registry server
+   */
   public NERegistryServer (int port) 
       throws SocketException, IOException {
     this.port = port;
@@ -30,7 +43,7 @@ public class NERegistryServer {
   }
   
   /*
-   * Execution loop
+   * Execution each registry command
    */
   // TODO: fixup closing streams on exceptions
   private void executeLoop () {
@@ -50,13 +63,6 @@ public class NERegistryServer {
       
       System.out.println (commands);
       executeCommand (commands.remove ());
-      
-      // Execute command in new thread
-      /*new Thread (new Runnable () {
-        public void run () { 
-          executeCommand (commands.remove ());
-        }
-      }).start ();*/
     }
   }
   
@@ -68,11 +74,11 @@ public class NERegistryServer {
    *    n = requested object not found
    *    a = rebind successful
    *    y = this is a registry server
-   */ 
-  
+   */
   // TODO: fixup closing streams on exceptions
   private void executeCommand (NERegistryCommand command) {
     String name, addr, riname;
+    NERemoteObjectReference ref;
     int port, key;
     
     try {
@@ -101,13 +107,44 @@ public class NERegistryServer {
           key = (Integer) command.removePart ();
           riname = (String) command.removePart ();
           
-          NERemoteObjectReference ref = 
-            new NERemoteObjectReference (addr, port, key, riname);
+          ref = new NERemoteObjectReference (addr, port, key, riname);
+          table.put (name, ref);
+          break;
+          
+        // bind
+        case 'b':
+          name = (String) command.removePart ();
+          if (table.containsKey (name)) {
+            out.writeChar ('1');
+            out.flush ();
+            break;
+          }
+          
+          addr = (String) command.removePart ();
+          port = (Integer) command.removePart ();
+          key = (Integer) command.removePart ();
+          riname = (String) command.removePart ();
+          
+          ref = new NERemoteObjectReference (addr, port, key, riname);
           table.put (name, ref);
           
-          out.writeChar ('a');
+          out.writeChar ('0');
           out.flush ();
-          break;
+          break;          
+          
+        // unbind
+        case 'u':
+          name = (String) command.removePart ();
+          if (! table.containsKey (name)) {
+            out.writeChar ('2');
+            out.flush ();
+            break;
+          }
+          table.remove (name);
+          
+          out.writeChar ('0');
+          out.flush ();
+          break;          
           
         // list
         case 'p':
@@ -181,8 +218,20 @@ public class NERegistryServer {
             commands.add (command);
             break;
             
-          // umbind
+          // bind
+          case 'b':
+            command.addPart ((String) in.readObject ());
+            command.addPart ((String) in.readObject ());
+            command.addPart (new Integer (in.readInt ()));
+            command.addPart (new Integer (in.readInt ()));
+            command.addPart ((String) in.readObject ());
+            commands.add (command);
+            break;            
+            
+          // unbind
           case 'u':
+            command.addPart ((String) in.readObject ());
+            commands.add (command);
             break;          
             
           // list

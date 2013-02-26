@@ -1,3 +1,11 @@
+/*
+ * Class      : NERemoteObjectStub.java
+   * Authors    : Eugene Choi, Norbert Chu
+   * Andrew IDs : dechoi, nrchu
+ * Description: This class encapsulates all exceptions generated during the
+ *              communication between the client and server side of RMI.
+ */
+
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
