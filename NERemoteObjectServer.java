@@ -11,14 +11,14 @@ import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
 import java.util.concurrent.*;
+import java.util.*;
 
 public class NERemoteObjectServer {
   // The table of remote objects stored on the server, indexed by key
   private NERemoteObjectTable remoteObjectTable;
   
-  // A queue of method invocations of some objects
-  // TODO: make thread per object
-  private ConcurrentLinkedQueue<NEMethodRequest> requests;
+  // A table mapping each object (key) to its NERemoteObjectServerThread
+  private HashMap<Integer, NERemoteObjectServerThread> threads;
   
   private int port;
   private ServerSocket listener;
@@ -26,23 +26,24 @@ public class NERemoteObjectServer {
   public NERemoteObjectServer (int port)
       throws SocketException, IOException {
     remoteObjectTable = new NERemoteObjectTable ();
-    requests = new ConcurrentLinkedQueue<NEMethodRequest> ();
+    threads = new HashMap<Integer, NERemoteObjectServerThread> ();
     listener = new ServerSocket (port);
     this.port = port;
     
     new Thread (new Runnable () {
       public void run () { listenLoop (); }
-    }).start ();
-    new Thread (new Runnable () {
-      public void run () { executeLoop (); }
-    }).start ();    
+    }).start ();  
   }
   
   /*
    * Add a remote object to the remote object table
    */
   public synchronized int add (NERemote o) {
-    return remoteObjectTable.add (o);
+    int key = remoteObjectTable.add (o);
+    NERemoteObjectServerThread thread = new NERemoteObjectServerThread (o);
+    thread.start ();
+    threads.put (key, thread);
+    return key;
   }
   
   /*
@@ -50,13 +51,20 @@ public class NERemoteObjectServer {
    */
   public synchronized void remove (int key) {
     remoteObjectTable.remove (key);
+    threads.get (key).killThread ();
+    threads.remove (key);
   }
 
   /*
    * Remove a remote object from the remote object table
    */
-  public synchronized int replace (int key, NERemote o) {
-    return remoteObjectTable.replace (key, o);
+  public synchronized void replace (int key, NERemote o) {
+    threads.get (key).killThread ();
+    threads.remove (key);
+    NERemoteObjectServerThread thread = new NERemoteObjectServerThread (o);
+    thread.start ();
+    threads.put (key, thread);    
+    remoteObjectTable.replace (key, o);
   }
 
   /*
@@ -64,90 +72,6 @@ public class NERemoteObjectServer {
    */
   public synchronized NERemote getObject (int key) {
     return remoteObjectTable.get (key);
-  }
-  
-  /*
-   * The loop that executes method invocation requests
-   */
-  public void executeLoop () {
-    while (true) {
-      while (requests.isEmpty ()) {
-        try {
-          Thread.sleep (100);
-        }
-        catch (InterruptedException e) {
-          // Should not reach here
-          continue;
-        }
-      }
-      
-      NEMethodRequest request = requests.remove ();
-      Socket client = request.getClient ();
-      OutputStream out = null;
-      
-      try {
-        out = client.getOutputStream ();
-        
-        try {
-          if (request.getException () != null) {
-            NEMarshaller.marshalException (request.getException (), out);
-          }
-          else {
-            NEMethodCall method = request.getMethodCall ();
-            System.out.println ("Method: " + method);
-            Serializable result = (Serializable) request.getMethodCall ().invoke ();
-            NEMarshaller.marshalReturnValue (new NEReturnValue (result), out);
-          }
-        }
-        catch (IllegalAccessException e) {
-          // should not reach here
-          NEMarshaller.marshalException (new NEException (e), out);
-        }
-        catch (IllegalArgumentException e) {
-          // Bad arguments were passed to the method
-          NEMarshaller.marshalException (new NEException (e), out);
-        }
-        catch (InvocationTargetException e) {
-          // Exception was thrown during method invocation
-          NEMarshaller.marshalException (
-            new NEException (new RuntimeException (e.getCause ())), 
-            out);
-        }
-        
-        out.close ();
-        client.close ();
-      }
-      catch (SocketException e) {
-        e.printStackTrace ();
-        closeConnection (client, null, out);
-        continue;
-      }
-      catch (IOException e) {
-        e.printStackTrace ();
-        closeConnection (client, null, out);
-        continue;
-      }
-      
-
-      
-      // Execute command in new thread
-      /*new Thread (new Runnable () {
-        public void run () { 
-          try {
-            Object result = method.invoke ();
-          }
-          catch (IllegalAccessException e) {
-          
-          }
-          catch (IllegalArgumentException e) {
-          
-          }
-          catch (InvocationTargetException e) {
-          
-          }
-        }
-      }).start ();*/
-    }
   }
   
   /*
@@ -177,40 +101,49 @@ public class NERemoteObjectServer {
         continue;
       }
       
-      NEMethodRequest request;
+      NERemoteObjectMethodRequest request;
       NEMethodCall method = null;
+      NEMethodInvocation mi = null;
+      int key = -1;
+      
       try {
-        // Get the method from the method invocation
-        synchronized (remoteObjectTable) {
-          NEMethodInvocation mi = (NEMethodInvocation) in.readObject ();
-          System.out.println (mi);
-          System.out.println ("Table: " + remoteObjectTable);
-          System.out.println (mi.getObjectKey ());
-          System.out.println (getObject (mi.getObjectKey ()));
-          method = NEDemarshaller.demarshalMethodInvocation
-              (mi, getObject (mi.getObjectKey ()));
-          System.out.println ("method: " + method);
-          request = new NEMethodRequest (method, client);
-        }
-      }
-      catch (ClassNotFoundException e) {
-        // Should not reach here
-        continue;
+        // Read the method invocation from the client socket
+        mi = (NEMethodInvocation) in.readObject ();
+        System.out.println (mi);
+        System.out.println ("Table: " + remoteObjectTable);
+        System.out.println (mi.getObjectKey ());
+        System.out.println (getObject (mi.getObjectKey ()));
+        key = mi.getObjectKey ();
       }
       catch (IOException e) {
         e.printStackTrace ();
-        request = new NEMethodRequest (method, client, new NEException (e));
+        closeConnection (client, in, null);
+        continue;
+      }      
+      catch (ClassNotFoundException e) {
+        // Should not reach here
+        continue;
+      }      
+      
+      try {
+        // Get the method from the method invocation
+        synchronized (remoteObjectTable) {
+          method = NEDemarshaller.demarshalMethodInvocation (mi, getObject (key));
+          System.out.println ("method: " + method);
+          request = new NERemoteObjectMethodRequest (method, client);
+        }
       }
       catch (NoSuchMethodException e) {
         e.printStackTrace ();
-        request = new NEMethodRequest (method, client, new NEException (e));
+        request = new NERemoteObjectMethodRequest (method, client, new NEException (e));
       }
       catch (SecurityException e) {
         e.printStackTrace ();
-        request = new NEMethodRequest (method, client, new NEException (e));
+        request = new NERemoteObjectMethodRequest (method, client, new NEException (e));
       }
       
-      requests.add (request);      
+      // Add the method request job the the target object's request queue
+      threads.get (key).addMethodRequest (request); 
     }
   }
   
@@ -247,40 +180,5 @@ public class NERemoteObjectServer {
     catch (IOException e) {
       // ignore
     }
-  }
-  
-  /*
-   * A private class representing a method invocation request from a 
-   * client, storing the method and the client that invoked it.
-   */
-  private class NEMethodRequest {
-    private NEMethodCall method;
-    private Socket client;
-    private NEException exception;
-    
-    public NEMethodRequest (NEMethodCall method, Socket client) {
-      this.method = method;
-      this.client = client;
-      this.exception = null;
-    }
-    
-    public NEMethodRequest (NEMethodCall method, Socket client, 
-        NEException exception) {
-      this.method = method;
-      this.client = client;
-      this.exception = exception;
-    }    
-    
-    public NEMethodCall getMethodCall () {
-      return method;
-    }
-    
-    public Socket getClient () {
-      return client;
-    }
-    
-    public NEException getException () {
-      return exception;
-    }
-  }
+  }  
 }

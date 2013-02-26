@@ -10,7 +10,6 @@ import java.util.HashMap;
 
 public class NERemoteObjectTable {
   private HashMap<Integer,NERemote> table;
-  private HashMap<Integer,Thread> threads;
   private int nextKey;
   
   /*
@@ -19,7 +18,6 @@ public class NERemoteObjectTable {
   public NERemoteObjectTable () {
     nextKey = 0;
     table = new HashMap<Integer,NERemote> ();
-    threads = new HashMap<Integer,Thread> ();
   }
   
   /*

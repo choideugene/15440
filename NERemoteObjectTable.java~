@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public class NERemoteObjectTable {
   private HashMap<Integer,NERemote> table;
-  private HashMap<Integer,Thread> threads;
+  private HashMap<Integer,NERemoteObjectServerThread> threads;
   private int nextKey;
   
   /*
@@ -19,16 +19,22 @@ public class NERemoteObjectTable {
   public NERemoteObjectTable () {
     nextKey = 0;
     table = new HashMap<Integer,NERemote> ();
-    threads = new HashMap<Integer,Thread> ();
+    threads = new HashMap<Integer,NERemoteObjectServerThread> ();
   }
   
   /*
    * Add a new remote object to the hash map
    */
   public synchronized int add (NERemote object) {
+    NERemoteObjectServerThread thread = new NERemoteObjectServerThread (object);
+    table.put (thread);
     table.put (nextKey, object);
     nextKey++;
     return nextKey - 1;
+  }
+  
+  public synchronized void addRequest (int key, NERemoteObjectMethodRequest req) {
+    threads.get (key).addMethodRequest (req);
   }
   
   /*
