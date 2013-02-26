@@ -10,6 +10,7 @@ import java.lang.Thread;
 /* 
  * 0 = list
  * 1 = lookup
+ * 2 = isRegistry
  */
 
  
@@ -72,7 +73,7 @@ public class NERegistryThread extends Thread {
 			}
 			closeThread();
 			return;
-		} 
+		}
 		try {
 			if (methodKey != 1 || (methodKey != 0)) {
 				System.out.println("invalid method request, code: " + methodKey);
@@ -95,7 +96,7 @@ public class NERegistryThread extends Thread {
 						outputStream.writeObject(ex);
 					}
 					
-				} else {
+				} else if (methodKey == 2) {
 					try { 
 						outputStream.writeObject(registry.list());
 						outputStream.writeInt(1);
@@ -103,6 +104,9 @@ public class NERegistryThread extends Thread {
 						outputStream.writeInt(-1);
 						outputStream.writeObject(ex);
 					}
+				} else if (methodKey == 3) {
+					outputStream.writeBoolean(true);
+					
 				}
 				outputStream.flush();
 			}
