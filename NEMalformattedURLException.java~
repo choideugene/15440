@@ -1,0 +1,9 @@
+public class NEMalformattedURLException extends RuntimeException {
+  public NEMalformattedURLExcpetion () {
+    super ();
+  }
+  
+  public NEMalformattedURLException (String message) {
+    super (message);
+  }
+}

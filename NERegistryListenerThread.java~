@@ -24,7 +24,7 @@ public class NERegistryListenerThread extends Thread {
 			try {
 				socket = serverSocket.accept();
 				NERegistryThread regThread = new NERegistryThread (reg, socket);
-				regThread.start(); // TODO:
+				regThread.start();
 			} catch (IOException ex) {
 				System.out.println("error accepting socket: " + ex.toString());
 			}

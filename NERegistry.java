@@ -6,18 +6,16 @@
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
-import java.util.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import java.util.HashMap;
+import java.util.*;
 
 public class NERegistry  {
-
 	public static final int REGISTRY_PORT = 1099; //well known port for registry
 	public static final int VALIDATE_TIMEOUT = 3000;
 	
-	private ConcurrentHashMap reg;
+	private HashMap<String, NERemoteObjectReference> reg;
 	private ServerSocket serverSocket;
 	private Socket socket;
 	private ObjectOutputStream outputStream;
@@ -27,7 +25,7 @@ public class NERegistry  {
 	
 	//localhost
 	public NERegistry() throws IOException { 
-		ConcurrentHashMap<String, NERemoteObjectReference> reg = new HashMap();
+		reg = new HashMap();
 		serverSocket = new ServerSocket(REGISTRY_PORT);
 		host = "localhost";
 		NERegistryListenerThread listenThread = new NERegistryListenerThread(serverSocket);
@@ -149,7 +147,7 @@ public class NERegistry  {
 		return ror;
 	}
 	
-	public void bind(String name, NERemoteObjectReference obj) throws NERemoteException, NEAlreadyBoundException, NEAccessException{
+	public void bind(String name, NERemoteObjectReference obj) throws NERemoteException, NEAlreadyBoundException, NEAccessException {
 		if (!host.equals("localhost")) {
 			throw new NEAccessException();
 		}
