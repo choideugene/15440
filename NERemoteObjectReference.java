@@ -1,8 +1,11 @@
 /*
- * Class: NERemoteObjectReference
+ * Class      : NERemoteObjectReference
+ * Authors    : Eugene Choi, Norbert Chu
+ * Andrew IDs : dechoi, nrchu
  * Description: Encapsulates server and other information about a remote
- * object. This class is meant to be the "reference" to a remote object that
- * can be passed around remotely (as a Serializable object).
+ *              object. This class is meant to be the "reference" to a 
+ *              remote object that can be passed around remotely (as a 
+ *              Serializable object).
  */
 
 import java.io.*;
@@ -21,23 +24,41 @@ public class NERemoteObjectReference implements Serializable {
     key = k;
   }
   
+  /*
+   * Get the address of the server hosting the remote object
+   */
   public String getHostAddress () {
     return hostAddress;
   }
   
+  /*
+   * Get the port of the server hosting the remote object
+   */
   public int getPort () {
     return port;
   }
   
+  /*
+   * Get the key of the remote object. The key is an id that allows the
+   * server to locate the actual remote object.
+   */
   public int getKey () {
     return key;
   }
   
+  /*
+   * Get the name of the remote interface that the remote object implements
+   */
   public String getRemoteInterfaceName () {
     return remoteInterfaceName;
   }
 
+  /*
+   * Localise the remote object reference. Returns the stub for the remote
+   * object
+   */
   public NERemoteObjectStub localise () {
+    // TODO:
     // 1. Check if riname + "_Stub" class exists
     // 2. If not, automatically create it
     try {
@@ -80,12 +101,21 @@ public class NERemoteObjectReference implements Serializable {
     //return null;
   }
   
+  /*
+   * Are to references pointing to the same remote object?
+   */
   public boolean equals (Object o) {
     NERemoteObjectReference r = (NERemoteObjectReference) o;
-    return (r.getHostAddress ().equals (hostAddress) &&
-            r.getRemoteInterfaceName ().equals (remoteInterfaceName) &
-            r.getPort () == port &&
-            r.getKey () == key);
+    try {
+      return (InetAddress.getByName (r.getHostAddress ()).equals 
+                (InetAddress.getByName(hostAddress)) &&
+              r.getRemoteInterfaceName ().equals (remoteInterfaceName) &
+              r.getPort () == port &&
+              r.getKey () == key);
+    }
+    catch (UnknownHostException e) {
+      return false;
+    }
   }
   
   public String toString () {

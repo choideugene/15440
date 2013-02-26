@@ -13,8 +13,12 @@ public class HelloClient {
       HelloInterface_Stub hello = (HelloInterface_Stub) reg.lookup("hello");
       System.out.println (hello);
       System.out.println ("Reference: " + hello.getRemoteObjectReference ());
-
-      String theGreeting = hello.sayHello (args[0]);
+      
+      String a;
+      if (args.length == 0) a = null;
+      else a = args[0];
+      
+      String theGreeting = hello.sayHello (a);
 
       System.out.println (theGreeting);
     }

@@ -1,8 +1,18 @@
+/*
+ * Class      : NEDemarshaller.java
+ * Authors    : Eugene Choi, Norbert Chu
+ * Andrew IDs : dechoi, nrchu
+ * Description: Handles demarshalling NEMessageable messages
+ */
+
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
 
 public class NEDemarshaller {
+  /*
+   * Returns the exception stored in the message.
+   */
   public static Exception demarshalException (NEException message) {
     return message.getException ();
   }
@@ -21,37 +31,20 @@ public class NEDemarshaller {
     else return rv;
   }
   
-  // TODO: methodDatabase should be mapping methodId to Method objects
+  /*
+   * Get the method stored in the message and return a NEMethodCall
+   * representing the invocation of the method on the target object.
+   */
   public static NEMethodCall demarshalMethodInvocation 
-    (NEMethodInvocation message, NERemoteObjectTable table)
+    (NEMethodInvocation message, NERemote targetObject)
       throws NoSuchMethodException, SecurityException {
-    Method method = null;
-    
-    if (message.isUsingId ()) {
-      // get method from methodDatabase
-    }
-    else  {
-      try {
-        System.out.println (message);
-        Class<?> objectType = message.getObjectType ();
-        Method[] ms = objectType.getMethods ();
-        for (int i = 0; i < ms.length; i++) {
-          System.out.println (ms[i]);
-        }        
-        System.out.println (objectType);
-        method = objectType.getMethod (
-          message.getMethodName (), message.getArgumentTypes ());        
-      }
-      catch (ClassNotFoundException e) {
-        // TODO: first check if class exists
-        // Download class file
-      }
-    }
+    Method method = message.getMethod ();
     
     Object[] args = message.getArguments ();
-    NERemote object = table.get (message.getObjectKey ()); // TODO: error check
-    System.out.println (message.getObjectKey ());
-    System.out.println (object);
-    return new NEMethodCall (object, method, args);
+    System.out.println ("In method call: " + targetObject);
+    return new NEMethodCall (targetObject, method, args);
   }  
+  
+  // TODO:  methodDatabase should be mapping methodId to Method objects
+  //        perhaps create methods database?
 }

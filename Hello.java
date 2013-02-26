@@ -20,19 +20,17 @@ public class Hello implements HelloInterface {
       NERegistry reg = NERegistryLocator.getRegistry ("localhost", 5000);
       System.out.println ("Got the registry");
       
-      try {
-        NERemoteObjectServer ros = new NERemoteObjectServer (5001);
-      }
-      catch (Exception e) {
-        e.printStackTrace ();
-        return;
-      }
+      NERemoteObjectServer ros = new NERemoteObjectServer (5001);
       System.out.println ("Started object server");
+      
+      int key = ros.add (server);
+      System.out.println ("Added remote object to object server: " + key);
+      System.out.println (ros.getObject (key));
       
       System.out.println ("Converted remote object to reference");
       
       NERemoteObjectReference ror = new NERemoteObjectReference 
-        ("localhost", 5001, 0, "HelloInterface");
+        ("localhost", 5001, key, "HelloInterface");
       reg.rebind (serverName, ror);
 
       // Just a console message
@@ -47,6 +45,7 @@ public class Hello implements HelloInterface {
   // This is the one real method
   public String sayHello (String name) throws NERemoteException {
     count++;
+    if (name == null) throw new NullPointerException ();
     return "Hello World " + count +  "! Hello " + name; 
   }
 }

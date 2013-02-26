@@ -1,14 +1,29 @@
 /*
- * All the arguments are either Serializable non-remote objects or
- * RemoteObjectReferences that represent the remote objects
+ * Class      : NEMethodInvocation.java
+ * Authors    : Eugene Choi, Norbert Chu
+ * Andrew IDs : dechoi, nrchu
+ * Description: This class encapsulates the method invocation from a client
+ *              of RMI. 
+ *
+ * Notes      : If an argument to the method is a remote object, then 
+ *              the NERemoteObjectReference of the remote object should replace
+ *              that argument when constructing a new NEMethodInvocation.
+ *              For example, if a client requests the invocation of a method
+ *              call "Integer add (RemoteNum number, Integer x)" from the remote 
+ *              object RemoteCalc (which, say, has object key 0 at some object 
+ *              server), then one would create the NEMethodInvocation as 
+ *              follows:
+ *                  Class[] argTypes = { RemoteNum.class, Integer.class };
+ *                  Serializable[] args = { number.getRemoteObjectReference (),
+ *                                          x };
+ *                  NEMethodInvocation mi = new NEMethodInvocation 
+ *                     (0, RemoteCalc.class, "add", argTypes, args);
  */
 
-import java.io.*;
-import java.net.*;
-import java.lang.*;
+import java.io.Serializable;
 import java.lang.reflect.*;
 
-public class NEMethodInvocation implements NEMessageable, Serializable {
+public class NEMethodInvocation implements NEMessageable {
   private boolean usingId;
   private int methodId;
   
@@ -68,6 +83,9 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
     }
   }  
   
+  /*
+   * Get the method id
+   */
   public int getMethodId () {
     return methodId;
   }
@@ -76,18 +94,30 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
     return usingId;
   }
   
+  /*
+   * Get the type of the object on which we are invoking this method.
+   */
   public Class<?> getObjectType () throws ClassNotFoundException {
     return Class.forName (objectType);
   }
   
+  /*
+   * Get the name of the method
+   */
   public String getMethodName () {
     return methodName;
   }
   
+  /*
+   * Get the object key
+   */
   public int getObjectKey () {
     return objectKey;
   }
   
+  /*
+   * Get the types of the arguments
+   */
   public Class<?>[] getArgumentTypes () throws ClassNotFoundException {
     Class<?>[] argTypes = new Class<?>[args.length];
     if (usingId) return null;
@@ -98,11 +128,17 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
     return argTypes;
   }
   
+  /* 
+   * Get the arguments to the method themselves. If a NERemoteObjectReference
+   * was passed in, then the stub for the remote object represented by the
+   * NERemoteObjectReference is returned instead
+   */
   public Object[] getArguments () {
     Object[] arguments = new Object[args.length];
     for (int i = 0; i < args.length; i++) {
       // Argument is remote object
-      if (args[i].getClass ().equals (NERemoteObjectReference.class)) {
+      if (args[i] != null &&
+          args[i].getClass ().equals (NERemoteObjectReference.class)) {
         NERemoteObjectReference objectRef = (NERemoteObjectReference) args[i];
         arguments[i] = objectRef.localise ();
       }
@@ -111,6 +147,25 @@ public class NEMethodInvocation implements NEMessageable, Serializable {
     return arguments;
   }
   
+  /*
+   * Get the Method encapsulated within this method invocation
+   */
+  public Method getMethod () 
+      throws NoSuchMethodException, SecurityException {
+    try {
+      Class<?> objectType = getObjectType ();
+      return objectType.getMethod (getMethodName (), getArgumentTypes ());        
+    }
+    catch (ClassNotFoundException e) {
+      // TODO: first check if class exists
+      // Download class file
+      return null;
+    }
+  }
+  
+  /* 
+   * Get the String representation of this method invocation request message
+   */
   public String toString () {
     String s = "";
     s += "Method name: " + methodName + "\n";
