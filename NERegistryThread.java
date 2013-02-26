@@ -75,10 +75,11 @@ public class NERegistryThread extends Thread {
 			return;
 		}
 		try {
-			if (methodKey != 1 || (methodKey != 0) || (methodKey != 3)) {
+			if (methodKey != 1 && (methodKey != 0) && (methodKey != 3)) {
 				System.out.println("invalid method request, code: " + methodKey);
 				outputStream.writeInt(-2);
 				outputStream.writeObject(new NEAccessException());
+        outputStream.flush();
 				closeThread();
 				return;
 			} else {
@@ -109,8 +110,8 @@ public class NERegistryThread extends Thread {
 					outputStream.writeBoolean(true);
 					
 				}
-			}
 				outputStream.flush();
+			}
 		}	catch (Exception ex) {
 				System.out.println("error sending response: " + ex.toString());
 		}
