@@ -5,34 +5,42 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public abstract class NERemoteServer { 
-	private ConcurrentHashMap<NERemote> objTable;
+	private static NERemoteObjectTable objTable;
 	public static int REGISTRY_PORT = 1099;
 	
-	private ConcurrentHashMap<NERemoteServerThread> threadPool;
 	
 	private int port;
 	private String addr;
-	private int index;
 	private NERegistry registry;
 	
 	public NERemoteServer(String addr, int port) throws IOException {
-		objTable =  new ConcurrentHashMap();
+		objTable =  new NERemoteObjectTable();
 		registry = new NERegistry();
-		index = 0;
+    
+		NEServerListeningThread listener = new NEServerListeningThread(port);
+    listener.start();
+	}
+	
+	public NERemoteServer(String addr) throws IOException {
+		objTable =  new NERemoteObjectTable();
+		registry = new NERegistry();
+		NEServerListeningThread listener = new NEServerListeningThread(REGISTRY_PORT);
+    listener.start();
 	}
 	
 	//call this upon object creation
-	private void remoteInit(String name, NERemote obj, int portnum) throws NEAlreadyBoundException {
-		NERemoteObjectReference ror = new NERemoteObjectReference(addr, portnum, index++, "");
+  
+	private void remoteInit(String name, NERemote obj) throws NEAlreadyBoundException {
 		
+		int id = objTable.add(obj);
 		
+		NERemoteObjectReference ror = new NERemoteObjectReference(addr, port, id, "");
 		registry.bind(name, ror);
-		objTable.insert(index, obj);
-		NERemoteServerThread rst = new NERemoteServerThread(portnum, obj);
+		NERemoteObjectServerThread rst = new NERemoteObjectServerThread(portnum, obj);
 		rst.start();
 		threadPool.insert(index, rst);
 		
@@ -40,8 +48,8 @@ public abstract class NERemoteServer {
 	
 	
 	//rebind
-	private void remoteReassign(String name, NERemote obj, int portnum) throws NERemoteException,  NEAccessException {
-		NERemoteObjectReference ror = new NERemoteObjectReference(addr, portnum, index++, "");
+	private void remoteReassign(String name, NERemote obj) throws NERemoteException,  NEAccessException {
+		NERemoteObjectReference ror = new NERemoteObjectReference(addr, port, index++, "");
 		
 		try {
 			remoteRemove(name);
