@@ -1,3 +1,8 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
@@ -7,7 +12,7 @@ import java.net.Socket;
 
 import java.util.HashMap;
 
-public class NERegistry extends NERemote {
+public class NERegistry  {
 
 	public static int REGISTRY_PORT = 1099; //well known port for registry
 	
@@ -20,36 +25,57 @@ public class NERegistry extends NERemote {
 	private int port;
 	
 	//localhost
-	public NERegistry() { 
+	public NERegistry() throws IOException { 
 		ConcurrentHashMap<String, NERemoteObjectReference> reg = new HashMap();
 		serverSocket = new ServerSocket(REGISTRY_PORT);
 		host = "localhost";
-		listen();
+		NERegistryListenerThread listenThread = new NERegistryListenerThread(serverSocket);
+		listenThread.start();
 	}
 	
-	public NERegistry(String host) {
+	public NERegistry(String host) throws NERegistryNotFoundException, NERemoteException {
 		this.host = host;
 		this.port = REGISTRY_PORT;
+		validate();
 	}
 	
-	public NERegistry(String host, int port) {
+	public NERegistry(String host, int port) throws NERegistryNotFoundException, NERemoteException {
 		this.host = host;
 		this.port = port;
+		validate();
 	}
 	
-	
-	private void listen() {
-		Socket socket;
-		while (true) {
-			try {
-				socket = serverSocket.accept();
-				NERegistryThread regThread = new NERegistryThread(this, socket);
-				regThread.start();
-			} catch (IOException ex) {
-				System.out.println("error accepting socket: " + ex.toString());
+	private void validate() throws NERemoteException, NERegistryNotFoundException {
+		boolean readResponse = false;
+		boolean res = false;
+                DataInputStream dis;
+		try {
+			this.socket = new Socket(host, REGISTRY_PORT);
+			this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+			dis = new DataInputStream(socket.getInputStream());
+		} 	catch (Exception ex) {
+			throw new NERemoteException(ex.toString());
+		}
+		try {
+			outputStream.writeInt(3);
+			outputStream.flush();
+			long startTime = System.currentTimeMillis();
+			long waitingPeriod = 3000;
+			while (!readResponse && ((System.currentTimeMillis()) - startTime < waitingPeriod)) {
+				if (dis.available() > 0) {
+					res = dis.readBoolean();
+					readResponse = true;
+				}
 			}
+			if (!res) {
+				throw new NERegistryNotFoundException(host, port);
+			}
+			//if it passes this then we've validated that the server exists. 
+		} catch (Exception ex) {
+			throw new NERemoteException(ex.toString());
 		}
 	}
+
 	
 	public String[] list() throws NERemoteException, NEAccessException {
 		if (host.equals("localhost")) {
