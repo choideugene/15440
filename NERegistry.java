@@ -25,12 +25,21 @@ public class NERegistry  {
 	
 	//localhost
 	public NERegistry() throws IOException { 
-		reg = new HashMap();
-		serverSocket = new ServerSocket(REGISTRY_PORT);
+		reg = new HashMap<String, NERemoteObjectReference>();
+		serverSocket = new ServerSocket (REGISTRY_PORT);
 		host = "localhost";
-		NERegistryListenerThread listenThread = new NERegistryListenerThread(serverSocket);
+		NERegistryListenerThread listenThread = new NERegistryListenerThread(this, serverSocket);
 		listenThread.start();
 	}
+	
+	public NERegistry (int port) throws IOException { 
+		reg = new HashMap<String, NERemoteObjectReference>();
+		serverSocket = new ServerSocket (port);
+		host = "localhost";
+		this.port = port;
+		NERegistryListenerThread listenThread = new NERegistryListenerThread(this, serverSocket);
+		listenThread.start();
+	}	
 	
 	public NERegistry(String host) throws NERegistryNotFoundException, NERemoteException {
 		this.host = host;
@@ -83,7 +92,7 @@ public class NERegistry  {
 	}
 	
 	private String[] localList() {
-		Set<String> set = (HashSet) reg.keySet();
+		Set<String> set = (HashSet<String>) reg.keySet();
 		return (set.toArray(new String[0]));
 	}
 	
@@ -109,7 +118,7 @@ public class NERegistry  {
 		}
 	}
 
-	public NERemote lookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
+	public NERemoteObjectStub lookup(String name) throws NERemoteException, NENotBoundException, NEAccessException {
 		if (host.equals("localhost")) { 
 			return localLookup(name).localise ();
 		} 

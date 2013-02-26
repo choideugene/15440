@@ -17,10 +17,10 @@ public class Hello implements HelloInterface {
       System.out.println ("Created remote object");
 
       // Tie the name "Hello" to the Hello object we just created
-      NERegistry reg = NERegistryLocator.getRegistry ("localhost", 5000);
+      NERegistry reg = new NERegistry (5010);
       System.out.println ("Got the registry");
       
-      NERemoteObjectServer ros = new NERemoteObjectServer (5001);
+      NERemoteObjectServer ros = new NERemoteObjectServer (5002);
       System.out.println ("Started object server");
       
       int key = ros.add (server);
@@ -31,7 +31,7 @@ public class Hello implements HelloInterface {
       
       NERemoteObjectReference ror = new NERemoteObjectReference 
         ("localhost", 5001, key, "HelloInterface");
-      reg.rebind (serverName, ror);
+      reg.bind (serverName, ror);
 
       // Just a console message
       System.out.println ("Hello Server ready");

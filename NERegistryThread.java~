@@ -31,7 +31,7 @@ public class NERegistryThread extends Thread {
 	private ObjectOutputStream outputStream;
 	private Socket socket;
 	
-	public NERegistryThread(NERegistry registry, Socket socket) {
+	public NERegistryThread (NERegistry registry, Socket socket) {
 		this.registry = registry;
 		this.socket = socket;
 	}
@@ -85,7 +85,8 @@ public class NERegistryThread extends Thread {
 					
 				if (methodKey == 1) {
 					try {
-						NERemoteObjectReference ror = registry.lookup(name);
+						NERemoteObjectSub ror = registry.lookup(name);
+						ror.getRemoteObjectReference ();
 						outputStream.writeInt(1);
 						outputStream.writeObject(ror);
 					} catch (NENotBoundException ex) {

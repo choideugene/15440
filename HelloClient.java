@@ -9,7 +9,7 @@ public class HelloClient {
   public static void main (String[] args) {
     try {
       //System.setSecurityManager (new RMISecurityManager());
-      NERegistry reg = NERegistryLocator.getRegistry ("localhost", 5000);
+      NERegistry reg = new NERegistry ("localhost", 5010);
       HelloInterface_Stub hello = (HelloInterface_Stub) reg.lookup("hello");
       System.out.println (hello);
       System.out.println ("Reference: " + hello.getRemoteObjectReference ());
