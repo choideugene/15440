@@ -1,4 +1,3 @@
-
 /*
  * Class      : NERemoteObjectServerThread.java
  * Authors    : Eugene Choi, Norbert Chu
@@ -7,38 +6,29 @@
  *              to a designated object.
  */
 
+
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-
 import java.util.concurrent.*;
 import java.util.*;
 
-public class NERemoteObjectServerThread extends Thread {
+public class NERemoteObjectServerThread {
   private NERemote object;
-  private LinkedList<NERemoteObjectMethodRequest> requests;
+  private LinkedList<NEMethodRequest> requests;
   private boolean kill;
   
   public NERemoteObjectServerThread (NERemote object) {
     this.object = object;
-    requests = new LinkedList<NERemoteObjectMethodRequest> ();
+    requests = new LinkedList ();
     kill = false;
   }
   
-  /*
-   * Add method request to this object's request queue
-   */
   public synchronized void addMethodRequest (NERemoteObjectMethodRequest req) {
     requests.add (req);
   }
   
-  /*
-   * Setup the thread for exit
-   */
-  public void killThread () {
+  public void kill () {
     kill = true;
   }
   
@@ -46,7 +36,7 @@ public class NERemoteObjectServerThread extends Thread {
    * The loop that executes method invocation requests
    */
   public void run () {
-    while (true && ! kill) {
+    while (true && ! killed) {
       while (requests.isEmpty ()) {
         try {
           Thread.sleep (100);
@@ -104,40 +94,5 @@ public class NERemoteObjectServerThread extends Thread {
         continue;
       }
     }
-  }
-  
-  /* 
-   * Close all connections to a client
-   */
-  private void closeConnection (Socket client, InputStream in, OutputStream out) {
-    try {
-      if (in != null) in.close ();
-    }
-    catch (SocketException e) {
-      // ignore
-    }
-    catch (IOException e) {
-      // ignore
-    }
-    
-    try {
-      if (out != null) out.close ();
-    }
-    catch (SocketException e) {
-      // ignore
-    }
-    catch (IOException e) {
-      // ignore
-    }
-    
-    try {
-      if (client != null) client.close ();
-    }
-    catch (SocketException e) {
-      // ignore
-    }
-    catch (IOException e) {
-      // ignore
-    }
-  }  
+  } 
 }

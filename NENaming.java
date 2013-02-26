@@ -36,12 +36,12 @@ public class NENaming {
     return info;
   }
 
-  public static NERemoteObjectReference lookup (String url)
+  public static NERemote lookup (String url)
       throws NEMalformattedURLException, NERemoteException, NENotBoundException, 
              NEAccessException, NERegistryNotFoundException {
     NEURLInfo info = parseURL (url);
     
-    NERegistry reg = new NERegistry (info.name, info.port);
+    NERegistry reg = NERegistryLocator.getRegistry (info.name, info.port);
     return reg.lookup (info.name);
   }
   
@@ -50,7 +50,7 @@ public class NENaming {
              NEAccessException, NERegistryNotFoundException {
     NEURLInfo info = parseURL (url);
     
-    NERegistry reg = new NERegistry (info.name, info.port);
+    NERegistry reg = NERegistryLocator.getRegistry (info.name, info.port);
     reg.bind (info.name, object);
   } 
   
@@ -59,7 +59,7 @@ public class NENaming {
              NERegistryNotFoundException {
     NEURLInfo info = parseURL (url);
     
-    NERegistry reg = new NERegistry (info.name, info.port);
+    NERegistry reg = NERegistryLocator.getRegistry (info.name, info.port);
     reg.rebind (info.name, object);
   }   
   
@@ -67,8 +67,8 @@ public class NENaming {
       throws NEMalformattedURLException, NERemoteException, NENotBoundException, 
              NEAccessException, NERegistryNotFoundException {
     NEURLInfo info = parseURL (url);
-    
-    NERegistry reg = new NERegistry (info.name, info.port);
+
+    NERegistry reg = NERegistryLocator.getRegistry (info.name, info.port);    
     reg.unbind (info.name);
   }    
   

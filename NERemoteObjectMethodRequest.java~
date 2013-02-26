@@ -1,0 +1,30 @@
+  private class NEMethodRequest {
+    private NEMethodCall method;
+    private Socket client;
+    private NEException exception;
+    
+    public NEMethodRequest (NEMethodCall method, Socket client) {
+      this.method = method;
+      this.client = client;
+      this.exception = null;
+    }
+    
+    public NEMethodRequest (NEMethodCall method, Socket client, 
+        NEException exception) {
+      this.method = method;
+      this.client = client;
+      this.exception = exception;
+    }    
+    
+    public NEMethodCall getMethodCall () {
+      return method;
+    }
+    
+    public Socket getClient () {
+      return client;
+    }
+    
+    public NEException getException () {
+      return exception;
+    }
+  }
