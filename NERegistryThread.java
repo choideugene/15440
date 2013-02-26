@@ -85,7 +85,8 @@ public class NERegistryThread extends Thread {
 					
 				if (methodKey == 1) {
 					try {
-						NERemoteObjectReference ror = registry.lookup(name);
+						NERemoteObjectStub ror = registry.lookup(name);
+						ror.getRemoteObjectReference ();
 						outputStream.writeInt(1);
 						outputStream.writeObject(ror);
 					} catch (NENotBoundException ex) {
