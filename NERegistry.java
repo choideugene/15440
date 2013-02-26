@@ -14,7 +14,8 @@ import java.util.HashMap;
 
 public class NERegistry  {
 
-	public static int REGISTRY_PORT = 1099; //well known port for registry
+	public static final int REGISTRY_PORT = 1099; //well known port for registry
+	public static final int VALIDATE_TIMEOUT = 3000;
 	
 	private ConcurrentHashMap reg;
 	private ServerSocket serverSocket;
@@ -60,8 +61,7 @@ public class NERegistry  {
 			outputStream.writeInt(3);
 			outputStream.flush();
 			long startTime = System.currentTimeMillis();
-			long waitingPeriod = 3000;
-			while (!readResponse && ((System.currentTimeMillis()) - startTime < waitingPeriod)) {
+			while (!readResponse && ((System.currentTimeMillis()) - startTime < VALIDATE_TIMEOUT)) {
 				if (dis.available() > 0) {
 					res = dis.readBoolean();
 					readResponse = true;
