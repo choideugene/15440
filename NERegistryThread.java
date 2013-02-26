@@ -75,7 +75,7 @@ public class NERegistryThread extends Thread {
 			return;
 		}
 		try {
-			if (methodKey != 1 || (methodKey != 0)) {
+			if (methodKey != 1 || (methodKey != 0) || (methodKey != 3)) {
 				System.out.println("invalid method request, code: " + methodKey);
 				outputStream.writeInt(-2);
 				outputStream.writeObject(new NEAccessException());
@@ -96,7 +96,7 @@ public class NERegistryThread extends Thread {
 						outputStream.writeObject(ex);
 					}
 					
-				} else if (methodKey == 2) {
+				} else if (methodKey == 0) {
 					try { 
 						outputStream.writeObject(registry.list());
 						outputStream.writeInt(1);
@@ -108,8 +108,8 @@ public class NERegistryThread extends Thread {
 					outputStream.writeBoolean(true);
 					
 				}
-				outputStream.flush();
 			}
+				outputStream.flush();
 		}	catch (Exception ex) {
 				System.out.println("error sending response: " + ex.toString());
 		}
