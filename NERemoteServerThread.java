@@ -54,8 +54,8 @@ public class NERemoteServerThread extends Thread {
             else {
               NEMethodCall method = request.getMethodCall ();
               System.out.println("Method: " + method);
-              Serializable result = (Serializable) request.getMethodCall ().invoke ();
-              NEMarshaller.marshalReturnValue (new NEReturnValue (result), out);
+              Serializable result = (Serializable) request.getMethodCall().invoke ();
+              NEMarshaller.marshalReturnValue (new NEReturnValue(result), out);
             }
           }
           catch (IllegalAccessException e) {

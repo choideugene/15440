@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public class NERemoteObjectTable {
   private HashMap<Integer,NERemote> table;
-  private HashMap<Integer,NERemoteObjectServerThread> threads;
+  private HashMap<Integer,NERemoteServerThread> threads;
   private int nextKey;
   
   /*
@@ -19,14 +19,16 @@ public class NERemoteObjectTable {
   public NERemoteObjectTable () {
     nextKey = 0;
     table = new HashMap<Integer,NERemote> ();
-    threads = new HashMap<Integer,NERemoteObjectServerThread> ();
+    threads = new HashMap<Integer,NERemoteServerThread> ();
   }
   
   /*
    * Add a new remote object to the hash map
    */
-  public synchronized int add (NERemote object, NERemoteObjectServerThread thread) {
+  public synchronized int add (NERemote object) {
     table.put (nextKey, object);
+    NERemoteServerThread thread = new NERemoteServerThread();
+    thread.start();
 	  threads.put (nextKey, thread);
     nextKey++;
     return nextKey - 1;
@@ -37,21 +39,23 @@ public class NERemoteObjectTable {
    */
   public synchronized void remove (int key) {
     table.remove (key);
-	  NERemoteObjectServerThread oldThread = threads.remove(key);
+	  NERemoteServerThread oldThread = threads.remove(key);
+    NERemoteServerThread.running = false;
   }
   
   /*
    * Replace the object pointed to by the key with the given remote object
    */
-  public synchronized int replace (int key, NERemote object, NERemoteObjectServerThread thread) {
+  public synchronized int replace (int key, NERemote object) {
     table.remove (key);
     table.put (nextKey, object);
-	  NERemoteObjectServerThread oldThread = threads.remove(key);
+	  NERemoteServerThread oldThread = threads.remove(key);
 	  oldThread.running = false;
+    NERemoteServerThread thread = new NERemoteServerThread();
 	  threads.put(nextKey, thread);
     nextKey++;
     return nextKey - 1;
-  }  
+  }
   
   /*
    * Find the object in the hash map pointed to by the key

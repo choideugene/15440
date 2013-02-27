@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public abstract class NERemoteServer { 
-  /*
+  
 	private static NERemoteObjectTable objTable;
 	public static int REGISTRY_PORT = 1099;
 	
@@ -37,14 +37,19 @@ public abstract class NERemoteServer {
   
 	private void remoteInit(String name, NERemote obj) throws NEAlreadyBoundException {
 		
+    Class objClass = obj.getClass();
+    try {
+      String interfaceName = objClass.getInterfaces()[0];
+    } catch (ArrayIndexOutOfBoundsException ex) {
+      System.out.println("trying to bind " + name + "to " + obj.toString() + "but not implementing any interfaces");
+      return;
+    }
 		int id = objTable.add(obj);
 		
-		NERemoteObjectReference ror = new NERemoteObjectReference(addr, port, id, "");
+    
+    
+		NERemoteObjectReference ror = new NERemoteObjectReference(addr, port, id, interfaceName);
 		registry.bind(name, ror);
-		NERemoteObjectServerThread rst = new NERemoteObjectServerThread(portnum, obj);
-		rst.start();
-		threadPool.insert(index, rst);
-		
 	}
 	
 	
@@ -70,8 +75,6 @@ public abstract class NERemoteServer {
 		int key = ror.getKey();
 		objTable.remove(ror.getKey());
 		registry.unbind(name);
-		NERemoteServerThread rst = threadPool.remove(key);
-		rst.running = false;;
 	}
-  */
+  
 }
