@@ -27,7 +27,7 @@ public class NERemoteObjectTable {
    */
   public synchronized int add (NERemote object, NERemoteObjectServerThread thread) {
     table.put (nextKey, object);
-	threads.put (nextKey, thread);
+	  threads.put (nextKey, thread);
     nextKey++;
     return nextKey - 1;
   }
@@ -37,8 +37,7 @@ public class NERemoteObjectTable {
    */
   public synchronized void remove (int key) {
     table.remove (key);
-	NERemoteObjectServerThread oldThread = threads.remove(key);
-	
+	  NERemoteObjectServerThread oldThread = threads.remove(key);
   }
   
   /*
@@ -47,9 +46,9 @@ public class NERemoteObjectTable {
   public synchronized int replace (int key, NERemote object, NERemoteObjectServerThread thread) {
     table.remove (key);
     table.put (nextKey, object);
-	NERemoteObjectServerThread oldThread = threads.remove(key);
-	oldThread.running = false;
-	threads.put(nextKey, thread);
+	  NERemoteObjectServerThread oldThread = threads.remove(key);
+	  oldThread.running = false;
+	  threads.put(nextKey, thread);
     nextKey++;
     return nextKey - 1;
   }  
@@ -62,7 +61,7 @@ public class NERemoteObjectTable {
   }
   
   public synchronized NERemote getThread(int key) {
-	return threads.get(key);
+	  return threads.get(key);
   }
   
   public String toString () {

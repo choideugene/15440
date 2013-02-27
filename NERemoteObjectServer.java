@@ -64,7 +64,7 @@ public class NERemoteObjectServer {
     NERemoteObjectServerThread thread = new NERemoteObjectServerThread (o);
     thread.start ();
     threads.put (key, thread);    
-    remoteObjectTable.replace (key, o);
+    remoteObjectTable.replace (key, o, thread);
   }
 
   /*
