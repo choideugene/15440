@@ -25,7 +25,7 @@ public class NEServerListeningThread extends Thread {
 				Socket socket = serverSocket.accept();
 				ois = new ObjectInputStream(socket.getInputStream());
 				
-				synchronized (NERemoteServer.objTable) {
+				synchronized (NERemoteObjectTableNorbert.objTable) {
 					NEMethodInvocation msg = ois.readObject();
 					int id = msg.getObjectKey();
 					

@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class NERemoteServer { 
   
-	private static NERemoteObjectTable objTable;
+	private static NERemoteObjectTableNorbert objTable;
 	public static int REGISTRY_PORT = 1099;
 	
 	
@@ -19,7 +19,7 @@ public abstract class NERemoteServer {
 	private NERegistry registry;
 	
 	public NERemoteServer(String addr, int port) throws IOException {
-		objTable =  new NERemoteObjectTable();
+		objTable =  new NERemoteObjectTableNorbert();
 		registry = new NERegistry();
     
 		NEServerListeningThread listener = new NEServerListeningThread(port);
@@ -27,7 +27,7 @@ public abstract class NERemoteServer {
 	}
 	
 	public NERemoteServer(String addr) throws IOException {
-		objTable =  new NERemoteObjectTable();
+		objTable =  new NERemoteObjectTableNorbert();
 		registry = new NERegistry();
 		NEServerListeningThread listener = new NEServerListeningThread(REGISTRY_PORT);
     listener.start();
